@@ -8,7 +8,7 @@ import {
   where, 
   orderBy 
 } from "firebase/firestore";
-import { db, auth } from "../config/firebase";
+import { db, auth, isFirebaseConfigured } from "../config/firebase";
 import { Complaint, UserRole } from "../types";
 
 // Operation types for error reporting conformant with Firestore skill
@@ -35,13 +35,14 @@ interface FirestoreErrorInfo {
 
 // Hardened error handler to satisfy Firestore skill requirements
 function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const isReal = isFirebaseConfigured();
   const errInfo: FirestoreErrorInfo = {
     error: error instanceof Error ? error.message : String(error),
     authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
+      userId: isReal ? auth?.currentUser?.uid : undefined,
+      email: isReal ? auth?.currentUser?.email : undefined,
+      emailVerified: isReal ? auth?.currentUser?.emailVerified : undefined,
+      isAnonymous: isReal ? auth?.currentUser?.isAnonymous : undefined,
     },
     operationType,
     path
@@ -91,6 +92,7 @@ export class ComplaintService {
 
     try {
       // Test or write to real firestore
+      if (!isFirebaseConfigured()) throw new Error("Firebase not configured");
       const docRef = doc(db, "complaints", complaint.id);
       await setDoc(docRef, complaint);
       console.log(`Successfully stored complaint ${complaint.id} in Firestore.`);
@@ -115,6 +117,7 @@ export class ComplaintService {
     const colPath = "complaints";
 
     try {
+      if (!isFirebaseConfigured()) throw new Error("Firebase not configured");
       let q;
       if (role === "MP" || role === "Department Officer" || role === "Administrator") {
         q = query(collection(db, colPath), orderBy("createdAt", "desc"));
@@ -165,6 +168,7 @@ export class ComplaintService {
     if (local) return local;
 
     try {
+      if (!isFirebaseConfigured()) throw new Error("Firebase not configured");
       const docRef = doc(db, "complaints", id);
       const docSnap = await getDoc(docRef);
       if (docSnap.exists()) {

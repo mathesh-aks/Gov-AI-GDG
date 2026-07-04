@@ -1,7 +1,7 @@
-import { initializeApp, getApps, getApp } from "firebase/app";
-import { getFirestore } from "firebase/firestore";
-import { getAuth } from "firebase/auth";
-import { getStorage } from "firebase/storage";
+import { initializeApp, getApps, getApp, FirebaseApp } from "firebase/app";
+import { getFirestore, Firestore } from "firebase/firestore";
+import { getAuth, Auth } from "firebase/auth";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 
 const metaEnv = (import.meta as any).env || {};
 
@@ -16,11 +16,67 @@ const firebaseConfig = {
   appId: metaEnv.VITE_FIREBASE_APP_ID || "1:123456789012:web:1234567890abc"
 };
 
-// Initialize Firebase safely
-const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+export const isFirebaseConfigured = (): boolean => {
+  const invalidKeywords = ["placeholder", "fakekey", "demo", "example", "missing", "undefined"];
+  
+  const valuesToCheck = [
+    firebaseConfig.apiKey,
+    firebaseConfig.projectId,
+    firebaseConfig.authDomain,
+    firebaseConfig.appId,
+    firebaseConfig.storageBucket,
+    firebaseConfig.messagingSenderId
+  ];
 
-export const db = getFirestore(app);
-export const auth = getAuth(app);
-export const storage = getStorage(app);
+  for (const value of valuesToCheck) {
+    if (!value || typeof value !== "string" || value.trim() === "") {
+      return false;
+    }
+    const lowerValue = value.toLowerCase();
+    for (const keyword of invalidKeywords) {
+      if (lowerValue.includes(keyword)) {
+        return false;
+      }
+    }
+  }
 
-export default app;
+  if (firebaseConfig.projectId === "govai-connect" && !metaEnv.VITE_FIREBASE_PROJECT_ID) {
+    return false;
+  }
+  if (firebaseConfig.messagingSenderId === "123456789012" && !metaEnv.VITE_FIREBASE_MESSAGING_SENDER_ID) {
+    return false;
+  }
+
+  return true;
+};
+
+let app: FirebaseApp | undefined;
+let db: Firestore | undefined;
+let auth: Auth | undefined;
+let storage: FirebaseStorage | undefined;
+
+if (isFirebaseConfigured()) {
+  try {
+    app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApp();
+    db = getFirestore(app);
+    auth = getAuth(app);
+    storage = getStorage(app);
+  } catch (error) {
+    console.error("Failed to initialize Firebase:", error);
+  }
+}
+
+// We cast these as any to avoid changing every consumer's type checking,
+// since consumers should only call these if isFirebaseConfigured() is true.
+const exportedApp = app as any;
+const exportedDb = db as any as Firestore;
+const exportedAuth = auth as any as Auth;
+const exportedStorage = storage as any as FirebaseStorage;
+
+export { 
+  exportedApp as app, 
+  exportedDb as db, 
+  exportedAuth as auth, 
+  exportedStorage as storage 
+};
+export default exportedApp;

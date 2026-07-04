@@ -14,7 +14,7 @@ import {
   setDoc, 
   updateDoc 
 } from "firebase/firestore";
-import { auth, db } from "../config/firebase";
+import { auth, db, isFirebaseConfigured as configIsConfigured } from "../config/firebase";
 import { UserProfile, UserRole } from "../types";
 
 // In-memory/localStorage fallback to guarantee 100% operation when Firebase setup is incomplete
@@ -64,22 +64,7 @@ const isFirebaseConfigured = (): boolean => {
   if (forceMockFallback) {
     return false;
   }
-  const options = auth.app.options;
-  if (!options.apiKey || 
-      options.apiKey.includes("Placeholder") || 
-      options.apiKey.includes("FakeKey") || 
-      options.apiKey === "undefined" || 
-      options.apiKey === "null" ||
-      options.apiKey.length < 25) {
-    return false;
-  }
-  if (!options.projectId || 
-      options.projectId.includes("Placeholder") || 
-      options.projectId === "govai-connect" || 
-      options.projectId === "react-example") {
-    return false;
-  }
-  return true;
+  return configIsConfigured();
 };
 
 export const FirebaseAuthService = {
