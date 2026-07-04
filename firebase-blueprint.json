@@ -1,0 +1,63 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "User profile document containing authentication metadata and governance role.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string" },
+        "name": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string" },
+        "photoURL": { "type": "string" },
+        "role": { "type": "string" },
+        "preferredLanguage": { "type": "string" },
+        "phoneNumber": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "updatedAt": { "type": "string" },
+        "lastLogin": { "type": "string" }
+      },
+      "required": ["uid", "fullName", "email", "role"]
+    },
+    "Complaint": {
+      "title": "Complaint",
+      "description": "Citizen submitted issue or grievance.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "citizenName": { "type": "string" },
+        "citizenUid": { "type": "string" },
+        "contactInfo": { "type": "string" },
+        "contactPreference": { "type": "string" },
+        "location": { "type": "string" },
+        "ward": { "type": "string" },
+        "villageArea": { "type": "string" },
+        "title": { "type": "string" },
+        "originalText": { "type": "string" },
+        "detectedLanguage": { "type": "string" },
+        "translatedText": { "type": "string" },
+        "category": { "type": "string" },
+        "priority": { "type": "string" },
+        "urgencyScore": { "type": "number" },
+        "department": { "type": "string" },
+        "status": { "type": "string" },
+        "recommendedAction": { "type": "string" },
+        "createdAt": { "type": "string" },
+        "sentiment": { "type": "string" },
+        "attachmentUrls": { "type": "array" },
+        "audioUrl": { "type": "string" }
+      },
+      "required": ["id", "citizenUid", "title", "originalText", "category", "status", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "Access rules for user accounts."
+    },
+    "/complaints/{complaintId}": {
+      "schema": "Complaint",
+      "description": "Access rules for citizen complaints."
+    }
+  }
+}

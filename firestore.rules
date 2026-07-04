@@ -1,0 +1,64 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Check if the request is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if the requested UID matches the authenticated user UID
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if the user has a specific governance role
+    function hasRole(role) {
+      return isAuthenticated() && 
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // User Profile Rules
+    match /users/{userId} {
+      // Users can read and write their own profile parameters
+      allow read, write: if isOwner(userId);
+      
+      // Administrators can manage all profiles
+      allow read, write: if hasRole('Administrator');
+      
+      // MPs can read profiles in the constituency
+      allow read: if hasRole('MP');
+    }
+
+    // Complaint Rules
+    match /complaints/{complaintId} {
+      // Authenticated users can create complaints belonging to themselves
+      allow create: if isAuthenticated() && request.resource.data.citizenUid == request.auth.uid;
+      
+      // Citizens can read their own, while MPs, Officers, and Admins can read all
+      allow read: if isAuthenticated() && (
+        resource.data.citizenUid == request.auth.uid ||
+        hasRole('MP') ||
+        hasRole('Department Officer') ||
+        hasRole('Administrator')
+      );
+      
+      // Citizens can update their own complaints, while Officers and Admins can update progress/status
+      allow update: if isAuthenticated() && (
+        (resource.data.citizenUid == request.auth.uid && request.resource.data.citizenUid == request.auth.uid) ||
+        hasRole('MP') ||
+        hasRole('Department Officer') ||
+        hasRole('Administrator')
+      );
+      
+      // Only admins can delete complaints
+      allow delete: if hasRole('Administrator');
+    }
+
+    // Default catch-all rule to prevent unauthenticated/unwanted access
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

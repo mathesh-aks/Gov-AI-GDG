@@ -1,0 +1,6 @@
+{
+  "name": "GovAI Connect",
+  "description": "An AI-powered multilingual constituency planning and citizen voice analysis platform for Members of Parliament.",
+  "requestFramePermissions": ["geolocation"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
